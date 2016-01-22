@@ -48,6 +48,31 @@ func (self Attributes) Add(name string, value interface{}) error {
 	return nil
 }
 
+func (self Attributes) Get(name string) (Attribute, bool) {
+	entry, ok := self.values[name]
+	return entry, ok
+}
+
+func (self Attributes) GetString(name string) (string, bool) {
+	entry, ok := self.values[name]
+	if ok {
+		return entry.Value, true
+	}
+	return "", false
+}
+
+func (self Attributes) GetInt(name string) (int64, bool) {
+	entry, ok := self.values[name]
+	if ok {
+		value, err := strconv.ParseInt(entry.Value, 10, 64)
+		if err != nil {
+			return 0, true
+		}
+		return value, true
+	}
+	return 0, false
+}
+
 func (self Attributes) toWire() wireAttributes {
 	var attrs []wireAttribute
 	for key, value := range self.values {
@@ -157,6 +182,22 @@ func (self *Server) NewEntity(e Entity) error {
 	return nil
 }
 
+func (self *Server) DeleteEntity(e Entity) error {
+	u := fmt.Sprintf("/v1/contextEntities/type/%s/id/%s", e.Type(), e.Id())
+	response := wireStatus{}
+	err := self.delete(u, &response)
+
+	if err != nil {
+		return err
+	}
+
+	if response.Code != 200 {
+		return fmt.Errorf("entity deletion failed. code=%d message=%s", response.Code, response.Message)
+	}
+
+	return nil
+}
+
 func (self *Server) EntitiesByType(entity_type string, page Page, f EntityFactory) ([]Entity, error) {
 	limit := int64(100)
 	offset := int64(page) * limit
@@ -241,6 +282,16 @@ func (self *Server) post(path string, body interface{}, response interface{}) er
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
+	return self.do(req, response)
+}
+
+func (self *Server) delete(path string, response interface{}) error {
+	u := self.server_url + path
+	req, err := http.NewRequest("DELETE", u, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Accept", "application/json")
 	return self.do(req, response)
 }
 
