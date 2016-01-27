@@ -198,6 +198,23 @@ func (self *Server) DeleteEntity(e Entity) error {
 	return nil
 }
 
+func (self *Server) UpdateEntity(e Entity) error {
+	var result wireAlteredContextResponse
+
+	u := fmt.Sprintf("/v1/contextEntities/type/%s/id/%s", e.Type(), e.Id())
+	err := self.put(u, e.Attributes().toWire(), &result)
+	if err != nil {
+		return err
+	}
+
+	status := result.Elements[0]
+	if status.Code != 200 {
+		return fmt.Errorf("entity creation failed. code=%d message=%s", status.Code, status.Message)
+	}
+
+	return nil
+}
+
 func (self *Server) EntitiesByType(entity_type string, page Page, f EntityFactory) ([]Entity, error) {
 	limit := int64(100)
 	offset := int64(page) * limit
@@ -277,6 +294,22 @@ func (self *Server) post(path string, body interface{}, response interface{}) er
 
 	u := self.server_url + path
 	req, err := http.NewRequest("POST", u, bytes.NewReader(octets))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	return self.do(req, response)
+}
+
+func (self *Server) put(path string, body interface{}, response interface{}) error {
+	octets, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	u := self.server_url + path
+	req, err := http.NewRequest("PUT", u, bytes.NewReader(octets))
 	if err != nil {
 		return err
 	}
