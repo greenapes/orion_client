@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -207,6 +208,10 @@ func (self *Server) UpdateEntity(e Entity) error {
 		return err
 	}
 
+	if len(result.Elements) < 1 {
+		log.Println(result)
+		return fmt.Errorf("unexpected result")
+	}
 	status := result.Elements[0]
 	if status.Code != 200 {
 		return fmt.Errorf("entity creation failed. code=%d message=%s", status.Code, status.Message)
