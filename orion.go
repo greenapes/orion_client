@@ -39,6 +39,12 @@ func (self Attributes) Add(name string, value interface{}) error {
 	case int64:
 		attr.Type = "int"
 		attr.Value = strconv.FormatInt(el, 10)
+	case float32:
+		attr.Type = "float"
+		attr.Value = strconv.FormatFloat(float64(el), 'f', -1, 32)
+	case float64:
+		attr.Type = "int"
+		attr.Value = strconv.FormatFloat(float64(el), 'f', -1, 64)
 	case Attribute:
 		attr = el
 	default:
@@ -66,6 +72,18 @@ func (self Attributes) GetInt(name string) (int64, bool) {
 	entry, ok := self.values[name]
 	if ok {
 		value, err := strconv.ParseInt(entry.Value, 10, 64)
+		if err != nil {
+			return 0, true
+		}
+		return value, true
+	}
+	return 0, false
+}
+
+func (self Attributes) GetFloat(name string) (float64, bool) {
+	entry, ok := self.values[name]
+	if ok {
+		value, err := strconv.ParseFloat(entry.Value, 64)
 		if err != nil {
 			return 0, true
 		}
