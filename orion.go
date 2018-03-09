@@ -299,6 +299,15 @@ func (self *Server) EntityById(e Entity) error {
 	return nil
 }
 
+func (self *Server) CheckEntity(eType string, eID string) (r bool) {
+	u := fmt.Sprintf("/v1/contextEntities/type/%s/id/%s", eType, eID)
+
+	result := wireQueryContextElement{}
+	err := self.get(u, &result)
+	r = err == nil && result.Code == 200
+	return
+}
+
 func (self *Server) get(path string, response interface{}) error {
 	u := self.server_url + path
 	req, err := http.NewRequest("GET", u, nil)
